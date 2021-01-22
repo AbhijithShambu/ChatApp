@@ -1,0 +1,78 @@
+// Approach 1 - (SQL approach, not suitable for firestore)
+userInfo = {
+    name: string,
+    phone: number,
+    description: string,
+    picture: string,
+    status: string
+}
+
+message = {
+    type: string = "text/link",
+    content: string,
+    timestamp: timestamp,
+    sender: userInfo/(doc reference)
+}
+
+chatInfo = {
+    type: string = "individual/group",
+    name: string,
+    description: string,
+    picture: string,
+    lastMessage: string
+}
+
+chatUsers = {
+    chat: /chatInfo/(doc reference)
+    user: /userInfo/(doc reference)
+}
+
+chatMessages = {
+    chat: /chatInfo/(doc reference)
+    message: /message/(doc reference)
+}
+
+userPreferences = {
+    user: /userInfo/(doc reference),
+    wallpaper: string,
+    fontSize:string = "Medium/Large/Small"
+}
+
+// Approach 2 - Fast, less calls
+user = {
+    name: string,
+    phone: number,
+    description: string,
+    picture: string,
+    status: string,
+    contacts = {
+        chatId:string,
+        name: string,
+        phone: number,
+        description: string,
+        picture: string
+    }
+}
+
+groupChat = {
+    chatId:string,
+    <userId> = {
+        name: string,
+        phone: number,
+        description: string,
+        picture: string
+    } ... ,
+    name: string,
+    description: string,
+    picture: string
+}
+
+chatMessage = {
+    chatId:string,
+    type: string = "text/link",
+    content: string,
+    timestamp: timestamp,
+    senderId: number,
+    senderName:string,
+    senderPicture:string,
+}
