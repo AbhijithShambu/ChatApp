@@ -1,0 +1,25 @@
+.chat-list {
+    list-style-type: none;
+    padding-left: 0px;
+    overflow-y: scroll;
+}
+
+
+.chat-list::-webkit-scrollbar {
+    width: 5px;               /* width of the entire scrollbar */
+}
+.chat-list::-webkit-scrollbar-track {
+    background: rgba(155, 247, 186, 0.4);      /* color of the tracking area */
+}   
+
+.chat-list::-webkit-scrollbar-thumb {
+    background-color: green;    /* color of the scroll thumb */
+    border-radius: 20px;       /* roundness of the scroll thumb */
+    border: 3px solid rgb(68, 235, 143);  /* creates padding around scroll thumb */
+}
+
+/* For Firefox */
+.chat-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(68, 235, 143)  rgba(155, 247, 186, 0.4);
+}

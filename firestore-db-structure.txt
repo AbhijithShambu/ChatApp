@@ -1,78 +1,89 @@
-// Approach 1 - (SQL approach, not suitable for firestore)
-userInfo = {
-    name: string,
-    phone: number,
-    description: string,
-    picture: string,
-    status: string
+// NoSQL database structure for the chat-app
+aUser {
+    userId:<docId>,
+    name:string,
+    phone:number,
+    picture:string,
+    description:string,
+    status:string = "typing.../Active/Inactive",
+    connections:[<userId>, ...], // All connections(contact, group, other) - for convinient querying
+    contactConnections:[<userId>, ...], 
+    groupConnections:[<userId>, ...], 
+    otherConnections:[<userId>, ...], 
 }
 
-message = {
-    type: string = "text/link",
-    content: string,
-    timestamp: timestamp,
-    sender: userInfo/(doc reference)
+aChat {
+    chatId:<docId>,
+    type:string = "individual/group",
+    participants:[<userId,...],
+    participantsData:{
+        <userId>:{
+            unreadMessages:number
+        },
+        ...
+    }
+    lastActivity:timestamp,
+    lastMessage:aMessage,   // Optional - if last message exists
+
+    // Only for "group" type fieds
+    name:string,
+    description:string,
+    picture:string,
+    admins:[<userId, ...]
+    created:string, // Optional
 }
 
-chatInfo = {
-    type: string = "individual/group",
-    name: string,
-    description: string,
-    picture: string,
-    lastMessage: string
-}
-
-chatUsers = {
-    chat: /chatInfo/(doc reference)
-    user: /userInfo/(doc reference)
-}
-
-chatMessages = {
-    chat: /chatInfo/(doc reference)
-    message: /message/(doc reference)
-}
-
-userPreferences = {
-    user: /userInfo/(doc reference),
-    wallpaper: string,
-    fontSize:string = "Medium/Large/Small"
-}
-
-// Approach 2 - Fast, less calls
-user = {
-    name: string,
-    phone: number,
-    description: string,
-    picture: string,
-    status: string,
-    contacts = {
-        chatId:string,
-        name: string,
-        phone: number,
-        description: string,
-        picture: string
+aMessage {
+    messageId:<docId>,
+    chatId:<chatId>,
+    senderId:<userId>,
+    textContent:string,
+    mediaContent:string, // Optional
+    replyTo:aMessage,    // Optional (aMessage with minimum fields - to avoid chaining)
+    linkDescription:{
+        poster:string,
+        title:string,
+        description:string
+    },                   // Optional
+    reactions:{
+        <reaction>:number   // Here <reaction> can be emoji and value indicates count
+    },                   // Optional
+    timestamp:timestamp,
+    status:string,
+    recipients:[senderId, <userId>, ...],
+    recipientStatus:{
+        <userId>:number,
+        ...
     }
 }
 
-groupChat = {
-    chatId:string,
-    <userId> = {
-        name: string,
-        phone: number,
-        description: string,
-        picture: string
-    } ... ,
-    name: string,
-    description: string,
-    picture: string
-}
+// Supported Operations 
+// Get 
+1) Get User info (phone)
+2) Get User contacts (userId)
+3) Get User chats (userId)
+4) Get User messages (userId)
+5) Get Chat messages (chatId)
 
-chatMessage = {
-    chatId:string,
-    type: string = "text/link",
-    content: string,
-    timestamp: timestamp,
-    senderId: number,
-    senderName:string,
-    senderPicture:string,
-}
+// Post
+1) Create a individual chat (user, recipient):
+a) When user first finds the recipient create aChat entry
+
+
+2) Send a message (message, chat):
+a)Create a new message entry in aMessage
+b)Increase unreadMessages count for all recipients in aChat(chat)
+
+3) Mark "Sent/Delivered" messages as read (userId, chat, messages):
+a)For current participant(userId) in aChat(chat) set unreadMessages to 0
+b)For each message, set current user's status as "Seen" and 
+if all other recipients have status as "Seen" then 
+mark entire message's status as "Seen"
+    Implementation:
+    1)Iterate messages starting from the most recent message
+    If status for current user is already set as "Seen" or 
+    if the message is sent by the current user itself then stop iterating further.
+    2) During each iteration:
+        Set recipient status for current user as "Seen"
+        Find and set average status of the message ("Sent/Delivered/Seen" by all the recipients)
+    3) Post the updated messages

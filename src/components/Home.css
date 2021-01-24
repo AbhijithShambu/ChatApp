@@ -1,0 +1,17 @@
+.home {
+    height: 100%;
+    border: 1px solid black;
+    display: flex;
+}
+
+.chat-list {
+    min-width: 230px;
+    width: 30%;
+    height: 100%;
+    border : 1px solid green;
+}
+
+.chat {
+    flex-grow: 1;
+    border: 1px solid brown;
+}

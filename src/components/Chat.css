@@ -1,0 +1,124 @@
+/* UIMessage */
+.message {
+    display: flex;
+    align-items: flex-start;
+    margin: 2pt 5pt;
+}
+
+.sender-picture {
+    width: 34px;
+    object-fit: "contain";
+    border-radius: 100%;
+    margin: 5pt;
+    align-self: flex-start;
+}
+
+.message-container {
+    display: flex;
+    flex-direction: column;
+    max-width: 280px;
+}
+
+.message-layout {
+    display: flex;
+    margin-top: 15px;
+    flex-direction: column;
+    background: rgba(111, 196, 111, 0.5);
+    border-radius: 0px 10px 10px 10px;
+}
+
+.message-body {
+    display: flex;
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
+.message-text {
+    flex-grow: 1;
+    margin: 4px;
+}
+
+.message-timestamp {
+    align-self: flex-end;
+    margin: 2px 4px 2px 5px;
+    font-size: small;
+    color: grey;
+}
+
+.message-status {
+    display: none;
+    align-self: flex-end;
+    margin-right:8px;
+    margin-bottom: 0px;
+    font-size: x-small;
+    color: grey;
+}
+
+.right-layout {
+    justify-content: flex-end;  /* right layout */
+}
+.right-layout .sender-picture {
+    display:none;
+}
+.right-layout .message-status {
+    display: inline;
+}
+.right-layout .message-layout {
+    margin-top: 0px;
+    border-radius: 10px 0px 10px 10px;
+}
+
+/* UIChat */
+/* Toolbar */
+.chat{
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-toolbar {
+    border: 1px solid grey;
+    padding: 5px;
+}
+
+.chat-body {
+    flex-grow: 1;
+    overflow-y: scroll;
+}
+
+.message-box {
+    display: flex;
+    margin: 2px 6px;
+    align-items: center;
+}
+
+.message-input-box {
+    flex-grow: 1;
+    display: flex;
+    border-radius: 40px;
+    margin: 5px;
+}
+
+.messages-list {
+    list-style-type: none;
+    padding-left: 0px;
+}
+
+/* For Chrome, Edge, Safari */
+.chat-body::-webkit-scrollbar {
+  width: 5px;               /* width of the entire scrollbar */
+}
+.chat-body::-webkit-scrollbar-track {
+  background: rgba(155, 247, 186, 0.4);      /* color of the tracking area */
+}
+
+.chat-body::-webkit-scrollbar-thumb {
+  background-color: green;    /* color of the scroll thumb */
+  border-radius: 20px;       /* roundness of the scroll thumb */
+  border: 3px solid rgb(68, 235, 143);  /* creates padding around scroll thumb */
+}
+
+/* For Firefox */
+.chat-body {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(68, 235, 143)  rgba(155, 247, 186, 0.4);
+}
