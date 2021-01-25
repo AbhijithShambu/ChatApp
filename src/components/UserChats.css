@@ -1,7 +1,42 @@
+.user-chats {
+    display: flex;
+    flex-direction: column;
+}
+
+.toolbar{
+    display: flex;
+    align-items: center;
+}
+
+.user-picture {
+    width: 40px;
+    object-fit: "contain";
+    border-radius: 50%;
+    margin: 5pt;
+}
+
+.search-button {
+    margin: 5pt
+}
+.search-layout > form {
+    flex-grow: 1;
+    margin: 5pt
+}
+
+.search-layout {
+    display: flex;
+    align-items: center;
+    padding: 5pt;
+}
+
 .chat-list {
     list-style-type: none;
     padding-left: 0px;
     overflow-y: scroll;
+}
+
+.chat-list > li:hover, .active-chat-item{
+    background-color: rgb(92, 124, 92, 0.8);;
 }
 
 

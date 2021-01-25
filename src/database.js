@@ -3,6 +3,7 @@ import config from './config.js';
 
 const firebaseApp = firebase.initializeApp(config.firebase);
 const db = firebaseApp.firestore();
+// console.log({ firestoreRef: db })
 
 db.enablePersistence()
 .catch(function(err) {

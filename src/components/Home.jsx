@@ -23,8 +23,8 @@ function Home() {
         const db = firestoreDB()
         db.userInfoObserver(phone, (userInfo)=>{
           setUser(userInfo)
-          console.log("UserInfo")
-          console.log(userInfo)
+          // console.log("UserInfo")
+          // console.log(userInfo)
 
           db.userChatsObserver(userInfo.userId, ({users, chats})=>{
             const userContacts = {}
@@ -33,19 +33,19 @@ function Home() {
             })
 
             setContacts(userContacts)
-            console.log("Contacts:")
-            console.log(userContacts)
+            // console.log("Contacts:")
+            // console.log(userContacts)
 
             setChats(chats)
-            console.log("Chats:")
-            console.log(chats)
+            // console.log("Chats:")
+            // console.log(chats)
 
           })
 
           db.userMessagesObserver(userInfo.userId, (messages)=>{
             setChatMessages(messages)
-            console.log("Messages:")
-            console.log(messages)
+            // console.log("Messages:")
+            // console.log(messages)
           })
         })
         
@@ -61,7 +61,7 @@ function Home() {
 
     return (
         <div className="home">
-            <UserChats user={ user } contacts={ contacts } chats={ chats }
+            <UserChats user={ user } contacts={ contacts } chats={ chats } activeChatId={ currentChat?.chatId }
               onChatClick={(chatId)=>handleChatClick(chatId)}/>
 
             <Chat user={ user } contacts={ contacts } 

@@ -1,34 +1,37 @@
 import { React, useState, useEffect, useRef } from 'react'
 import firestoreDB from '../firestoreDB'
 import './Chat.css'
+import utils from '../Utils'
 
 const defaultPicture = "https://workhound.com/wp-content/uploads/2017/05/placeholder-profile-pic.png"
 
 function Chat({ user, contacts, chat, messages}) {
     const [messageText, setMessageText] = useState("")
     const [messageMedia, setMessageMedia] = useState(null)
-    const lastMessageEle = useRef(null)
+    const scrollToEle = useRef(null)
 
-    const scrollToBottom = () => {
-        lastMessageEle.current?.scrollIntoView({ behavior: "smooth" })
+    const scrollToBottom = (smoothScroll=false) => {
+        scrollToEle.current?.scrollIntoView(smoothScroll ? { behavior: "smooth" } : {})
     }
 
     useEffect(() => {
         scrollToBottom()
         if (messages.length > 0) {
             const latestMsg = messages[messages.length-1]
-            if (latestMsg.recipientStatus[user.userId] !== 2) {
+            if (latestMsg.senderId != user.userId && latestMsg.recipientStatus[user.userId] !== 2) {
                 firestoreDB().markAllMessagesAsRead(user.userId, chat, messages)
             }
         }
     }, [messages]);
 
-    console.log({ UIChat: {
-        user: user,
-        contacts: contacts,
-        chat: chat,
-        messages: messages
-    }})
+    // useEffect(() => {
+    //     console.log({ UIChat: {
+    //         user: user,
+    //         contacts: contacts,
+    //         chat: chat,
+    //         messages: messages
+    //     }})
+    // }, [chat])
 
     if (!chat) {
         return <div></div>
@@ -37,19 +40,24 @@ function Chat({ user, contacts, chat, messages}) {
     let name = ""
     let desc = ""
     if (chat.type == 'individual') {
-        const chatUser = contacts[chat.participants.filter((participant)=>user.userId != participant).pop()]
+        const chatUser = contacts[chat.participants
+            .filter((participant)=>user.userId != participant).pop()]
         name = chatUser.name
         desc = chatUser.status
     } else if (chat.type == 'group'){
         name = chat.name
     }
 
-    const createMessage = (message)=>{
+    const createMessage = (message, isSameSender)=>{
         let sender = user
         let messageClass = "message right-layout"
         if (message.senderId != user.userId) {
             sender = contacts[message.senderId]
             messageClass = "message"
+        }
+
+        if (isSameSender) {
+            messageClass += " same-sender"
         }
 
         let mediaElement = <div></div>
@@ -71,7 +79,7 @@ function Chat({ user, contacts, chat, messages}) {
                         { mediaElement }
                         <div className="message-body">
                             <p className="message-text">{ message.textContent }</p>
-                            <p className="message-timestamp">{ message.timestamp.toDate().toLocaleTimeString() }</p>
+                            <p className="message-timestamp">{ utils.getShortDate(message.timestamp.toDate()) }</p>
                         </div>
                     </div>
                     <p className="message-status">{message.status}</p>
@@ -81,9 +89,9 @@ function Chat({ user, contacts, chat, messages}) {
     }
 
     const handleSendMessage = ()=>{
-        console.log("Send clicked: "+messageText)
+        // console.log("Send clicked: "+messageText)
         if (messageText || messageMedia) {
-            firestoreDB().sendMessage(user.userId, chat, messageText, messageMedia)
+            firestoreDB().sendMessage(user, chat, messageText, messageMedia)
             setMessageText("")
             setMessageMedia(null)
         }
@@ -105,12 +113,12 @@ function Chat({ user, contacts, chat, messages}) {
                 <ul className="messages-list">
                     { 
                         messages.map((message, index)=>{
-                            { console.log({ UIMessage: { message: message }}) }
-                            return <li key={message.messageId}>{createMessage(message)}</li>
+                            return <li key={message.messageId}>{createMessage(message, 
+                                index > 0 && messages[index-1]?.senderId === message.senderId)}</li>
                         })
                     }
                 </ul>
-                <div  ref={lastMessageEle}></div>
+                <div  ref={scrollToEle}></div>
             </div>
 
             <div className="message-box">

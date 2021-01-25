@@ -4,14 +4,14 @@
     display: flex;
 }
 
-.chat-list {
+.user-chats {
     min-width: 230px;
     width: 30%;
     height: 100%;
-    border : 1px solid green;
+    border : 1px solid grey;
 }
 
 .chat {
     flex-grow: 1;
-    border: 1px solid brown;
+    border: 1px solid grey;
 }

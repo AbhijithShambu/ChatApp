@@ -1,4 +1,5 @@
 import db from "./database";
+import firebase from 'firebase';
 
 const extractDataFromDoc = (doc)=>{
     const obj = doc.data()
@@ -80,10 +81,14 @@ class FirestoreDB {
         }, (error)=>failure(error))
     }
 
-    sendMessage = (senderId, chat, text, media=null)=>{
+    sendMessage = (user, chat, text, media=null)=>{
+        const batch = db.batch()
+        const senderId = user.userId
         const timeStamp = Date.now()
+        const recipients = chat.participants.filter((id)=>id != senderId)
+
+        // Set recipient status as "Sent" for each recipient other than sender
         const recipientStatus = {}
-        const recipients = JSON.parse(JSON.stringify(chat.participants.filter((id)=>id != senderId)))
         recipients.forEach((recipient)=>recipientStatus[recipient] = 0)
 
         // Create a new message entry
@@ -101,84 +106,79 @@ class FirestoreDB {
             message['mediaContent'] = media 
         }
 
-        // Increase unreadMessages count for all recipients in aChat(chat)
-        const participantsData = chat.participantsData
-        recipients.forEach((recipient)=>{
-            const data = participantsData[recipient]
-            if (data) {
-                data['unreadMessages'] = data['unreadMessages']+1
-            } else {
-                data = { 'unreadMessages': 1 }
+        // Make connections with participants who are not connected previously
+        const newConnections = [...user.connections]
+        let updateConnections = false
+        chat.participants.forEach((participant)=>{
+            if (!newConnections.includes(participant)){
+                newConnections.push(participant)
+                updateConnections = true
             }
         })
-
-        // Post data to the firestoreDB
-        // const updateChatInfoReq = db.collection('aChat').doc(chat.chatId)
-        // .update({
-        //     lastMessage: message,
-        //     lastActivity: new Date(timeStamp),
-        //     participantsData: participantsData
-        // })
-
+        if (updateConnections) {
+            const updateUserConnectionsReq = db.collection('aUser')
+            .doc(senderId)
+            batch.update(updateUserConnectionsReq, 
+                { connections:newConnections })
+        }
         const updateChatInfoReq = db.collection('aChat').doc(chat.chatId)
-        .set({
-            ...chat,
-            lastMessage: message,
-            lastActivity: new Date(timeStamp),
-            participantsData: participantsData
-        })
+        
+        // Increase unreadMessages count for all recipients in aChat(chat)
+        if (chat.isNewChat) {
+            delete chat["isNewChat"]
+            const participantsData = {}
+            recipients.forEach((recipient)=>{
+                participantsData[recipient] = { 'unreadMessages': 1 }
+            })
+            batch.set(updateChatInfoReq, {
+                ...chat,
+                lastMessage: message,
+                lastActivity: new Date(timeStamp),
+                participantsData: participantsData
+            })
+        } else {
+            const data = {
+                lastMessage: message,
+                lastActivity: new Date(timeStamp)
+            }
+            recipients.forEach((recipient)=>{
+                data[`participantsData.${recipient}.unreadMessages`] = firebase.firestore.FieldValue.increment(1)
+            })
+            batch.update(updateChatInfoReq, data)
+        }
 
         const sendMsgReq = db.collection('aMessage').doc(timeStamp.toString())
-        .set(message)
+        batch.set(sendMsgReq, message)
 
-        return Promise.all([sendMsgReq, updateChatInfoReq])
+        return batch.commit().then((success)=>{}, (error)=>console.log({
+            sendMessageError:error
+        }))
     }
 
     markAllMessagesAsRead = (userId, chat, messages)=>{
+        const batch = db.batch();
+
         // For current participant(userId) in aChat set unreadMessages to 0
-        const participantsData = 
-            JSON.parse(JSON.stringify(chat.participantsData))
-        const data = participantsData[userId]
-        let updateReq = true
-        if (data) {
-            if (data['unreadMessages'] == 0) {
-                updateReq = false
-            } else {
-                data['unreadMessages'] = 0
-            }
-        } else {
-            data = { 'unreadMessages': 0 }
-        }
-        // Make request to update aChat(chat) info
-        let updateChatInfoReq = null
-        if (updateReq) {
-            updateChatInfoReq = db.collection('aChat').doc(chat.chatId)
-            .update({
-                participantsData: participantsData
-            })
+        const userData = chat.participantsData[userId]
+        if (!userData || userData['unreadMessages'] !== 0) {
+            const chatRef = db.collection('aChat').doc(chat.chatId)
+            // batch.update(chatRef, { participantsData: data })
+            const data = {}
+            data[`participantsData.${userId}.unreadMessages`] = 0
+            batch.update(chatRef, data)
         }
 
         // Task: For each message, set current user's status as "Seen" and 
         // if all other recipients have status as "Seen" then 
         // mark entire message's status as "Seen"
-        console.log({
-            messagesSentTobeUpdated: messages
-        })
         const updateMessages = {}   // To store message updates
         let count = 0   // For tracking number of messages to be updated
         // Iterate from the most recent message
         for(let index=messages.length-1; index>=0; index--) {
             const message = messages[index]
-            console.log(message)
             if (message.recipientStatus[userId] === 2 || message.senderId === userId) {
                 // If status for current user is already set as "Seen" or 
                 // if the message is sent by the current user itself then stop iterating further.
-                console.log({
-                    "Breaking":{
-                        statusAlreadyAsSeen: message.recipientStatus[userId] === 2,
-                        isSenderSelf:message.senderId === userId
-                    }
-                })
                 break;
             }
             // Set recipient status for current user as "Seen"
@@ -212,27 +212,16 @@ class FirestoreDB {
         }
 
         // Make firestore request to update all required messages
-        let updateMessageStatusReq = null
         if (count > 0) {
-            const batch = db.batch();
             for(let id in updateMessages){
                 const ref = db.collection('aMessage').doc(id)
                 batch.update(ref, updateMessages[id])
             }
-            
-            updateMessageStatusReq = batch.commit()
         }
 
-        console.log({
-            markAsRead: {
-                chatInfoUpdate:{
-                    participantsData: participantsData
-                },
-                messagesUpdate:updateMessages
-            }
-        })
-
-        return Promise.all([updateChatInfoReq, updateMessageStatusReq])
+        return batch.commit().then((success)=>{}, (error)=>console.log({
+            markAllMessagesAsReadError:error
+        }))
     }
 }
 

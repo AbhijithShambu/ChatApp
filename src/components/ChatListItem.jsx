@@ -1,5 +1,6 @@
 import React from 'react'
 import ProfileListItem from './ProfileListItem.jsx'
+import utils from '../Utils'
 
 function ChatListItem({ user, contacts, chat, onClick }) {
     let name = ""
@@ -25,14 +26,14 @@ function ChatListItem({ user, contacts, chat, onClick }) {
         }
     }
 
-    const unreadCount = chat.participantsData[user.userId].unreadMessages
+    const unreadCount = chat.participantsData[user.userId]?.unreadMessages || 0
     
     return (
         <ProfileListItem 
             title={name} 
             description={lastMessage || "..."}  
             picture={picture}
-            subText={chat.lastActivity.toDate().toLocaleTimeString()} 
+            subText={utils.getShortDate(chat.lastActivity.toDate())} 
             notificationsCount={unreadCount}
             onClick={(_)=>onClick(chat)}
         />

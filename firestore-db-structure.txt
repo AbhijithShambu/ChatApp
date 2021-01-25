@@ -70,9 +70,10 @@ aMessage {
 a) When user first finds the recipient create aChat entry
 
 
-2) Send a message (message, chat):
-a)Create a new message entry in aMessage
+2) Send a message (user, chat, message):
+a)Make connections with participants who are not connected previously in aUser
 b)Increase unreadMessages count for all recipients in aChat(chat)
+c)Create a new message entry in aMessage
 
 3) Mark "Sent/Delivered" messages as read (userId, chat, messages):
 a)For current participant(userId) in aChat(chat) set unreadMessages to 0
