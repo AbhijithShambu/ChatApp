@@ -24,14 +24,6 @@ function Chat({ user, contacts, chat, messages}) {
         }
     }, [messages]);
 
-    // useEffect(() => {
-    //     console.log({ UIChat: {
-    //         user: user,
-    //         contacts: contacts,
-    //         chat: chat,
-    //         messages: messages
-    //     }})
-    // }, [chat])
 
     if (!chat) {
         return <div></div>
