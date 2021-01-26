@@ -1,14 +1,15 @@
 import { React, useState, useEffect, useRef } from 'react'
 import firestoreDB from '../firestoreDB'
 import './Chat.css'
-import utils from '../Utils'
-
-const defaultPicture = "https://workhound.com/wp-content/uploads/2017/05/placeholder-profile-pic.png"
+import Message from './Message'
 
 function Chat({ user, contacts, chat, messages}) {
     const [messageText, setMessageText] = useState("")
     const [messageMedia, setMessageMedia] = useState(null)
+    const [anyoneTyping, setAnyoneTyping] = useState(undefined)
     const scrollToEle = useRef(null)
+
+    const [timer, setTimer] = useState(undefined)
 
     const scrollToBottom = (smoothScroll=false) => {
         scrollToEle.current?.scrollIntoView(smoothScroll ? { behavior: "smooth" } : {})
@@ -23,6 +24,18 @@ function Chat({ user, contacts, chat, messages}) {
             }
         }
     }, [messages]);
+
+    useEffect(() => {
+        if(chat?.participantsData) {
+            let typing = undefined
+            Object.entries(chat.participantsData).map(([id, data])=>{
+                if (id !== user.userId && data.isTyping) {
+                    typing = `${contacts[id]?.name} is typing...`
+                }
+            })
+            setAnyoneTyping(typing)
+        }
+    }, [chat?.participantsData])
 
 
     if (!chat) {
@@ -40,44 +53,24 @@ function Chat({ user, contacts, chat, messages}) {
         name = chat.name
     }
 
-    const createMessage = (message, isSameSender)=>{
-        let sender = user
-        let messageClass = "message right-layout"
-        if (message.senderId != user.userId) {
-            sender = contacts[message.senderId]
-            messageClass = "message"
-        }
+    const typingStatus = (isTyping)=>{
+        // console.log(`User ${isTyping ? "started" : "stopped"} typing`)
+        firestoreDB().typingEvent(user.userId, chat.chatId, isTyping)
+    }
 
-        if (isSameSender) {
-            messageClass += " same-sender"
-        }
+    const handleOnKeyPress = (event)=>{
+        timer ? clearTimeout(timer) : typingStatus(true)
 
-        let mediaElement = <div></div>
-        const pattern = new RegExp(".*\.[jpg|png|jpeg]$")
-        if (pattern.exec(message.mediaContent)) {
-            mediaElement = <img src={new URL(message.mediaContent)} alt="" className="message-media" 
-                width="200px" height="200px" style={ { objectFit:"contain", margin: "2px"} }/>
-        }
+        setTimer(setTimeout(()=>{
+            typingStatus(false)
+            setTimer(undefined)
+        }, 250))
+    }
 
-        return (
-            <div className={ messageClass }>
-                <img src={ new URL(sender.picture || defaultPicture) } 
-                    alt="" className="sender-picture"/>
-                <div className="message-container">
-                    <div className="message-layout">
-                        <div className="message-header">
-
-                        </div>
-                        { mediaElement }
-                        <div className="message-body">
-                            <p className="message-text">{ message.textContent }</p>
-                            <p className="message-timestamp">{ utils.getShortDate(message.timestamp.toDate()) }</p>
-                        </div>
-                    </div>
-                    <p className="message-status">{message.status}</p>
-                </div>
-            </div>
-        );
+    const handleOnBlur = (event)=>{
+        if (timer) clearTimeout(timer)
+        setTimer(undefined)
+        typingStatus(false)
     }
 
     const handleSendMessage = ()=>{
@@ -94,7 +87,7 @@ function Chat({ user, contacts, chat, messages}) {
             <div className="chat-toolbar">
                 <div className="chat-info">
                     <h3 className="chat-name">{name}</h3>
-                    <p className="chat-desc">{ desc }</p>
+                    <p className="chat-desc">{ anyoneTyping || desc }</p>
                 </div>
                 <div className="icon-options">
 
@@ -102,14 +95,22 @@ function Chat({ user, contacts, chat, messages}) {
             </div>
 
             <div className="chat-body" >
-                <ul className="messages-list">
-                    { 
-                        messages.map((message, index)=>{
-                            return <li key={message.messageId}>{createMessage(message, 
-                                index > 0 && messages[index-1]?.senderId === message.senderId)}</li>
-                        })
-                    }
-                </ul>
+                <ul className="messages-list">{ 
+                    messages.map((message, index)=>{
+                        const hideSenderInfo = index > 0 && 
+                            messages[index-1]?.senderId === message.senderId
+                        
+                        return (<li key={message.messageId}>
+                            <Message 
+                                sender={contacts[message.senderId]}
+                                message={message}
+                                viewProps = {{
+                                    rightLayout: user.userId == message.senderId,
+                                    hideSenderInfo: hideSenderInfo,
+                                }}/>
+                        </li>);
+                    })
+                    }</ul>
                 <div  ref={scrollToEle}></div>
             </div>
 
@@ -118,7 +119,9 @@ function Chat({ user, contacts, chat, messages}) {
                     <input type="text" className="form-control message-input"
                         placeholder="Type a message"
                         value={messageText}
-                        onChange={(event)=>setMessageText(event.target.value)}/>
+                        onChange={(event)=>setMessageText(event.target.value) }
+                        onKeyPress={(event)=>handleOnKeyPress(event)}
+                        onBlur={(e)=>{handleOnBlur(e)}}/>
                 </div>
                 <button className="btn btn-success message-send"
                     onClick={(_)=>handleSendMessage()}>Send</button>

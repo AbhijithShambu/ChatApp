@@ -223,6 +223,12 @@ class FirestoreDB {
             markAllMessagesAsReadError:error
         }))
     }
+
+    typingEvent = (userId, chatId, isTyping)=>{
+        const data = {}
+        data[`participantsData.${userId}.isTyping`] = isTyping
+        return db.collection('aChat').doc(chatId).update(data)
+    }
 }
 
 const instance = new FirestoreDB();

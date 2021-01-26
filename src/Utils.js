@@ -1,7 +1,9 @@
 
 
 class Utils {
-    getChatInfo(user, chat, contacts) {
+    getDefaultPicture = ()=> "https://workhound.com/wp-content/uploads/2017/05/placeholder-profile-pic.png"
+   
+    getChatInfo = (user, chat, contacts)=>{
         const chatInfo = {}
         if (chat.type == 'individual') {
             const chatUser = contacts[chat.participants.filter((participant)=>user.userId != participant).pop()]
