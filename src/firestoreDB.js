@@ -1,11 +1,6 @@
 import db from "./database";
 import firebase from 'firebase';
-
-const extractDataFromDoc = (doc)=>{
-    const obj = doc.data()
-    obj['id'] = doc.id;
-    return obj;
-}
+import utils from './Utils'
 
 class FirestoreDB {
     userInfoObserver = (phone, success, failure)=>{
@@ -19,11 +14,8 @@ class FirestoreDB {
     }
 
     userChatsObserver = (userId, success, failure)=>{
-        let usersLoaded = false
-        let chatsLoaded = false
-
-        let users = []
-        let chats = []
+        let usersLoaded = false; let chatsLoaded = false
+        let users = []; let chats = []
 
         db.collection('aUser')
         .where('connections', 'array-contains', userId)
@@ -69,45 +61,32 @@ class FirestoreDB {
                 const messages = snapshot.docs.map((doc)=>doc.data())
                 messages.sort((a,b)=>a.timestamp>b.timestamp ? 1 : -1)
                 messages.forEach((message)=>{
-                    let chat = chatMessages[message.chatId]
-                    if (chat) {
-                        chatMessages[message.chatId] = [...chat, message]
-                    } else {
-                        chatMessages[message.chatId] = [message]
+                    if (!(message.chatId in chatMessages)){
+                        chatMessages[message.chatId] = []
                     }
+                    chatMessages[message.chatId].push(message)
                 })
                 success(chatMessages)
             } else { success([]) }
         }, (error)=>failure(error))
     }
 
-    sendMessage = (user, chat, text, media=null)=>{
+    sendMessage = (sender, chat, newMessage)=>{
         const batch = db.batch()
-        const senderId = user.userId
-        const timeStamp = Date.now()
-        const recipients = chat.participants.filter((id)=>id != senderId)
+        
+        const recipients = chat.participants.filter((id)=>id != sender.userId)
 
         // Set recipient status as "Sent" for each recipient other than sender
         const recipientStatus = {}
         recipients.forEach((recipient)=>recipientStatus[recipient] = 0)
 
-        // Create a new message entry
-        const message = {
-            messageId: timeStamp.toString(),
-            chatId: chat.chatId,
-            senderId: senderId,
-            recipients: chat.participants,
-            recipientStatus: recipientStatus,
-            status: "Sent",
-            timestamp: new Date(timeStamp),
-            textContent: text
-        }
-        if (media) {
-            message['mediaContent'] = media 
-        }
+        const message = JSON.parse(JSON.stringify(newMessage))
+        message['status'] = "Sent"
+        message['recipientStatus'] = recipientStatus
+        message['timestamp'] = newMessage.timestamp.toDate()
 
         // Make connections with participants who are not connected previously
-        const newConnections = [...user.connections]
+        const newConnections = [...sender.connections]
         let updateConnections = false
         chat.participants.forEach((participant)=>{
             if (!newConnections.includes(participant)){
@@ -117,7 +96,7 @@ class FirestoreDB {
         })
         if (updateConnections) {
             const updateUserConnectionsReq = db.collection('aUser')
-            .doc(senderId)
+            .doc(sender.userId)
             batch.update(updateUserConnectionsReq, 
                 { connections:newConnections })
         }
@@ -133,24 +112,28 @@ class FirestoreDB {
             batch.set(updateChatInfoReq, {
                 ...chat,
                 lastMessage: message,
-                lastActivity: new Date(timeStamp),
+                lastActivity: message.timestamp,
                 participantsData: participantsData
             })
         } else {
             const data = {
                 lastMessage: message,
-                lastActivity: new Date(timeStamp)
+                lastActivity: message.timestamp
             }
             recipients.forEach((recipient)=>{
-                data[`participantsData.${recipient}.unreadMessages`] = firebase.firestore.FieldValue.increment(1)
+                data[`participantsData.${recipient}.unreadMessages`] 
+                    = firebase.firestore.FieldValue.increment(1)
             })
             batch.update(updateChatInfoReq, data)
         }
 
-        const sendMsgReq = db.collection('aMessage').doc(timeStamp.toString())
+        console.log(message)
+    
+        const sendMsgReq = db.collection('aMessage')
+            .doc(message.messageId)
         batch.set(sendMsgReq, message)
 
-        return batch.commit().then((success)=>{}, (error)=>console.log({
+        return batch.commit().then((_)=>{}, (error)=>console.log({
             sendMessageError:error
         }))
     }
@@ -219,7 +202,7 @@ class FirestoreDB {
             }
         }
 
-        return batch.commit().then((success)=>{}, (error)=>console.log({
+        return batch.commit().then((_)=>{}, (error)=>console.log({
             markAllMessagesAsReadError:error
         }))
     }

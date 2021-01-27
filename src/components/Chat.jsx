@@ -2,8 +2,9 @@ import { React, useState, useEffect, useRef } from 'react'
 import firestoreDB from '../firestoreDB'
 import './Chat.css'
 import Message from './Message'
+import utils from '../Utils'
 
-function Chat({ user, contacts, chat, messages}) {
+function Chat({ user, contacts, chat, messages, setMessages}) {
     const [messageText, setMessageText] = useState("")
     const [messageMedia, setMessageMedia] = useState(null)
     const [anyoneTyping, setAnyoneTyping] = useState(undefined)
@@ -73,10 +74,39 @@ function Chat({ user, contacts, chat, messages}) {
         typingStatus(false)
     }
 
+    const sendMessage = (message)=>{
+        firestoreDB().sendMessage(user, chat, message).then(()=>{}, (error)=>{
+            const updatedMessages = [...messages]
+            updatedMessages[messages.indexOf(message)] 
+                = {...message, 'status': "Failed"}
+            setMessages(chat.chatId, updatedMessages)
+        })
+    }
+
     const handleSendMessage = ()=>{
         // console.log("Send clicked: "+messageText)
         if (messageText || messageMedia) {
-            firestoreDB().sendMessage(user, chat, messageText, messageMedia)
+            // Prepare a message
+            const timeStamp = Date.now()
+            const message = {
+                messageId: timeStamp.toString(),
+                chatId: chat.chatId,
+                senderId: user.userId,
+                recipients: chat.participants,
+                status: "...",
+                timestamp: utils.createTimestamp(new Date(timeStamp)),
+                textContent: messageText
+            }
+            if (messageMedia) {
+                message['mediaContent'] = messageMedia 
+            }
+
+            // Update the messages list with new nessage in local
+            setMessages(chat.chatId, [...messages, message])
+            
+            // Send the message
+            sendMessage(message)
+
             setMessageText("")
             setMessageMedia(null)
         }
@@ -95,22 +125,31 @@ function Chat({ user, contacts, chat, messages}) {
             </div>
 
             <div className="chat-body" >
-                <ul className="messages-list">{ 
-                    messages.map((message, index)=>{
-                        const hideSenderInfo = index > 0 && 
-                            messages[index-1]?.senderId === message.senderId
-                        
-                        return (<li key={message.messageId}>
-                            <Message 
-                                sender={contacts[message.senderId]}
-                                message={message}
-                                viewProps = {{
-                                    rightLayout: user.userId == message.senderId,
-                                    hideSenderInfo: hideSenderInfo,
-                                }}/>
-                        </li>);
-                    })
-                    }</ul>
+                <ul className="messages-list">{ messages.map((message, index)=>{
+                    const hideSenderInfo = index > 0 && 
+                        messages[index-1]?.senderId === message.senderId
+                    const isSelfMsg = user.userId === message.senderId
+                    
+                    let showDateEle = false
+                    if (index > 0) {
+                        const prevMsg = messages[index-1]
+                        showDateEle = !utils.isSameDay(prevMsg.timestamp.toDate(),
+                            message.timestamp.toDate())
+                    }
+                    return (<li key={message.messageId}>
+                        { showDateEle && 
+                        <p className="date">{utils.getShortDateInWords(message.timestamp.toDate())}</p>}
+                        <Message 
+                            sender={contacts[message.senderId]}
+                            message={message}
+                            viewProps = {{
+                                rightLayout: isSelfMsg,
+                                hideSenderInfo: hideSenderInfo,
+                                showName: chat.type === "group" && !isSelfMsg
+                            }}/>
+                    </li>);
+                })
+                }</ul>
                 <div  ref={scrollToEle}></div>
             </div>
 

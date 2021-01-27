@@ -19,24 +19,35 @@
     /* border: 1px solid black; */
 }
 
+#sender-name {
+    display:none;
+    margin-top: 5px;
+    margin-bottom: 1px;
+    font-size: small;
+    /* border: 1px solid black; */
+}
+
 .message-layout {
     display: flex;
-    margin-top: 15px;
+    margin-top: 16px;
     margin-bottom: 2px;
     flex-direction: column;
     background: rgba(111, 196, 111, 0.5);
     border-radius: 0px 10px 10px 10px;
+    /* border: 1px solid black; */
+
 }
 
 .message-body {
     display: flex;
-    padding-left: 2px;
+    padding-left: 4px;
     padding-right: 2px;
 }
 
 .message-text {
     flex-grow: 1;
-    margin: 4px;
+    margin: 2px;
+    /* border: 1px solid black; */
 }
 
 .message-timestamp {
@@ -44,6 +55,7 @@
     margin: 2px 4px 2px 5px;
     font-size: small;
     color: grey;
+    /* border: 1px solid black; */
 }
 
 .message-status {
@@ -55,12 +67,19 @@
     color: grey;
 }
 
-.hide-sender-info .sender-picture{
+.hide-sender-pic .sender-picture{
    visibility: hidden;
    margin-bottom: 0px;
 }
-.hide-sender-info .message-layout {
+.hide-sender-pic .message-layout {
     margin-top: 2px;
+}
+
+.show-sender-name .message-layout {
+    margin-top:0px;
+}
+.show-sender-name #sender-name {
+    display: block;
 }
 
 .right-layout {

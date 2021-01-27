@@ -1,10 +1,13 @@
 import React from 'react'
 import utils from '../Utils'
+import './Message.css'
 
 function Message({ sender , message, viewProps }) {
     let messageClass = viewProps.rightLayout ? "message right-layout" : "message"
     if (viewProps.hideSenderInfo) {
-        messageClass += " hide-sender-info"
+        messageClass += " hide-sender-pic"
+    } else if (viewProps.showName) {
+        messageClass += " show-sender-name"
     }
 
     let mediaElement = <div></div>
@@ -14,11 +17,17 @@ function Message({ sender , message, viewProps }) {
             width="200px" height="200px" style={ { objectFit:"contain", margin: "2px"} }/>
     }
 
+    let date = message.timestamp
+    if ("toDate" in date) {
+        date = date.toDate()
+    }
+
     return (
         <div className={ messageClass }>
             <img src={ new URL(sender.picture || utils.getDefaultPicture()) } 
                 alt="" className="sender-picture"/>
             <div className="message-container">
+                <p id="sender-name">{sender.name}</p>
                 <div className="message-layout">
                     <div className="message-header">
 
@@ -26,7 +35,7 @@ function Message({ sender , message, viewProps }) {
                     { mediaElement }
                     <div className="message-body">
                         <p className="message-text">{ message.textContent }</p>
-                        <p className="message-timestamp">{ utils.getShortDate(message.timestamp.toDate()) }</p>
+                        <p className="message-timestamp">{ utils.getTime(date) }</p>
                     </div>
                 </div>
                 <p className="message-status">{message.status}</p>

@@ -44,11 +44,19 @@ function Home() {
       }, [phone])
 
     const handleChatClick = (chat)=>{
-      console.log("Chat clicked: "+chat)
-      setCurrentChat(chat)
- 
-      // firestoreDB().markAllMessagesAsRead(user.userId, 
-      //   chat, chatMessages[chat.chatId])
+      if (currentChat !== chat) {
+        console.log("Chat clicked: "+chat)
+        setCurrentChat(chat)
+  
+        firestoreDB().markAllMessagesAsRead(user.userId, 
+          chat, chatMessages[chat.chatId])
+      }
+    }
+
+    const setMessagesForChat = (chatId, messages)=>{
+      const newChatMessages = {...chatMessages}
+      newChatMessages[chatId] = messages
+      setChatMessages(newChatMessages)
     }
 
     return (
@@ -57,7 +65,9 @@ function Home() {
               onChatClick={(chatId)=>handleChatClick(chatId)}/>
 
             <Chat user={ user } contacts={ contacts } 
-              chat={ currentChat } messages={ chatMessages[currentChat && currentChat.chatId] || [] }/>
+              chat={ currentChat } 
+              messages={ chatMessages[currentChat && currentChat.chatId] || [] }
+              setMessages={ setMessagesForChat }/>
         </div>
     )
 }
