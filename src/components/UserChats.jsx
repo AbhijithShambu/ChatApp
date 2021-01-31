@@ -3,8 +3,10 @@ import utils from '../Utils'
 import ChatListItem from './ChatListItem'
 import ProfileListItem from './ProfileListItem'
 import './UserChats.css'
+import firestoreDB from '../firestoreDB'
+import contactsLogo from '../assets/person-lines-fill.svg'
 
-function UserChats({ user, contacts, chats, onChatClick, activeChatId }) {
+function UserChats({ user, contacts, chats, onChatClick, activeChatId, setView }) {
     const [searchText, setSearchText] = useState("")
     const [contactsWithChat, setContactsWithChat] = useState([])
 
@@ -52,28 +54,21 @@ function UserChats({ user, contacts, chats, onChatClick, activeChatId }) {
         })
     }
 
-    const createNewChat = (contact)=> {
-         return {
-             chatId:Date.now().toString(),
-             type:"individual",
-             participants:[user.userId, contact.userId],
-             participantsData:{},
-             lastActivity:new Date(Date.now()),
-             createdBy:user.userId,
-             isNewChat:true
-         }
-    }
-
     const handleSearchClick= ()=>{
         // Close keyboard in case of mobiles
     }
 
     return (
-        <div className="user-chats">
+        <div className="left-component">
             <div className="toolbar">
                 <img src={user.picture} alt="" className="user-picture"/>
                 <h5 className="title">ChatApp</h5>
-                <div className="options"></div>
+                <div className="options">
+                    <img src={ contactsLogo } alt="" style={{ margin: "5px" }}
+                        onClick={ (e)=>setView && setView("contacts") }/>
+                     <button className="btn-sm btn-primary" style={{ }}
+                        onClick={ (e)=>setView && setView("createGroup") }>New Group</button>
+                </div>
             </div>
             <div className="search-layout">
                 <form>
@@ -87,7 +82,7 @@ function UserChats({ user, contacts, chats, onChatClick, activeChatId }) {
             <ul className="chat-list">
                 { filterChats(searchText).map((chat)=>{
                     return (
-                        <li key={chat.chatId} className={chat.chatId == activeChatId ? "active-chat-item":""}>
+                        <li key={chat.chatId} className={chat.chatId === activeChatId ? "active-chat-item":""}>
                             <ChatListItem user={user} contacts={contacts} chat={chat} 
                                 onClick={onChatClick}/>
                         </li>
@@ -97,7 +92,10 @@ function UserChats({ user, contacts, chats, onChatClick, activeChatId }) {
                     return (
                         <li key={contact.userId}>
                             <ProfileListItem title={contact.name} description={contact.description}
-                                picture={contact.picture} onClick={(_)=>{onChatClick(createNewChat(contact))}}/>
+                                picture={contact.picture}
+                                onClick={(_)=>{onChatClick(firestoreDB()
+                                    .createNewIndividualChatObject(user.userId, contact.userId))}}
+                                />
                         </li>
                     )
                 })}

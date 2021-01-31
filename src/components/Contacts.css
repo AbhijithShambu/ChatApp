@@ -1,0 +1,93 @@
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+.header {
+    display: flex;
+    background: rgba(61, 53, 53, 0.8);
+    align-items: center;
+}
+
+.create-contact {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 6px;
+    padding: 4px;
+    border-radius: 22px;
+}
+.create-contact > p{
+    margin: 0px 4px;
+}
+
+.title {
+    flex-grow: 1;
+    align-content: center;
+    color: white;
+    font-style: bold;
+}
+
+.search {
+    display: flex;
+    align-items:center;
+    margin: 10px;
+    padding: 0px 6px 0px 4px;
+    border: 1px solid black;
+    border-radius: 22px;
+}
+
+/* Removing border to input */
+.search-input {
+    margin: 0px 4px;
+    border-top-style: hidden;
+    border-right-style: hidden;
+    border-left-style: hidden;
+    border-bottom-style: groove;
+    min-width: 100px;
+    /* background-color: #eee; */
+}
+.search-input:focus {
+    outline: none;
+}
+
+.list-item {
+    border: 0px 1px 0px 1px solid black;
+}
+
+.list {
+    list-style-type: none;
+    padding-left: 0px;
+    overflow-y: scroll;
+}
+
+.list > li:hover, .active-chat-item{
+    background-color: rgb(92, 124, 92, 0.8);;
+}
+
+
+.list::-webkit-scrollbar {
+    width: 5px;               /* width of the entire scrollbar */
+}
+.list::-webkit-scrollbar-track {
+    background: rgba(155, 247, 186, 0.4);      /* color of the tracking area */
+}   
+
+.list::-webkit-scrollbar-thumb {
+    background-color: green;    /* color of the scroll thumb */
+    border-radius: 20px;       /* roundness of the scroll thumb */
+    border: 3px solid rgb(68, 235, 143);  /* creates padding around scroll thumb */
+}
+
+/* For Firefox */
+.list {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(68, 235, 143)  rgba(155, 247, 186, 0.4);
+}

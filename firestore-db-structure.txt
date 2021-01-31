@@ -1,18 +1,26 @@
 // NoSQL database structure for the chat-app
-aUser {
+aUser(docId:(phone:string)) {
+    type:string= "user/contact"
     userId:<docId>,
     name:string,
     phone:number,
     picture:string,
     description:string,
     status:string = "typing.../Active/Inactive",
-    connections:[<userId>, ...], // All connections(contact, group, other) - for convinient querying
-    contactConnections:[<userId>, ...], 
-    groupConnections:[<userId>, ...], 
-    otherConnections:[<userId>, ...], 
+    connections:[<userId>, ...],
+    contacts:[<userId>, ...], 
+    contactInfo:{
+        <userId:{
+            name:string,
+            phone:number
+        }, 
+        ...
+    }
+    groupContacts:[<userId>, ...], 
+    otherContacts:[<userId>, ...], 
 }
 
-aChat {
+aChat(docId:"IndividualChat/GroupChat:<timestamp>") {
     chatId:<docId>,
     type:string = "individual/group",
     participants:[<userId,...],
@@ -30,10 +38,10 @@ aChat {
     description:string,
     picture:string,
     admins:[<userId, ...]
-    created:string, // Optional
+    createdBy:<userId>
 }
 
-aMessage {
+aMessage(docId:"<timestamp>") {
     messageId:<docId>,
     chatId:<chatId>,
     senderId:<userId>,

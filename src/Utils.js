@@ -7,13 +7,13 @@ class Utils {
     
     getChatInfo = (user, chat, contacts)=>{
         const chatInfo = {}
-        if (chat.type == 'individual') {
-            const chatUser = contacts[chat.participants.filter((participant)=>user.userId != participant).pop()]
+        if (chat.type === 'individual') {
+            const chatUser = contacts[chat.participants.filter((participant)=>user.userId !== participant).pop()]
             chatInfo['name'] = chatUser.name
             chatInfo["picture"] = chatUser.picture
             chatInfo['description'] = chatUser.description
             chatInfo['phone'] = chatUser.phone
-        } else if (chat.type == 'group'){
+        } else if (chat.type === 'group'){
             chatInfo['name'] = chat.name
             chatInfo["picture"] = chat.picture
             chatInfo['description'] = chat.description

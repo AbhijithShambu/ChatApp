@@ -4,10 +4,10 @@ import './Chat.css'
 import Message from './Message'
 import utils from '../Utils'
 
-function Chat({ user, contacts, chat, messages, setMessages}) {
+function Chat({ user, contacts, chatObj, messages, setMessages, setView}) {
+    const [chat, setChat] = useState(chatObj)
     const [messageText, setMessageText] = useState("")
     const [messageMedia, setMessageMedia] = useState(null)
-    const [anyoneTyping, setAnyoneTyping] = useState(undefined)
     const scrollToEle = useRef(null)
 
     const [timer, setTimer] = useState(undefined)
@@ -16,47 +16,35 @@ function Chat({ user, contacts, chat, messages, setMessages}) {
         scrollToEle.current?.scrollIntoView(smoothScroll ? { behavior: "smooth" } : {})
     }
 
+    useEffect(()=>{
+        let unsubscribe = ()=>{}
+        if (chatObj && !chatObj.isNewChat) {
+            unsubscribe = firestoreDB().chatObserver(chatObj.chatId, (newChat)=>{
+                setChat(newChat)
+            }, (error)=>console.log({ chatObserverError: error }))
+        }
+        return ()=>unsubscribe()
+    }, [chatObj])
+
     useEffect(() => {
         scrollToBottom()
         if (messages.length > 0) {
             const latestMsg = messages[messages.length-1]
-            if (latestMsg.senderId != user.userId && latestMsg.recipientStatus[user.userId] !== 2) {
+            if (chat && !chat.isNewChat && latestMsg.senderId !== user.userId && latestMsg.recipientStatus[user.userId] !== 2) {
                 firestoreDB().markAllMessagesAsRead(user.userId, chat, messages)
             }
         }
-    }, [messages]);
-
-    useEffect(() => {
-        if(chat?.participantsData) {
-            let typing = undefined
-            Object.entries(chat.participantsData).map(([id, data])=>{
-                if (id !== user.userId && data.isTyping) {
-                    typing = `${contacts[id]?.name} is typing...`
-                }
-            })
-            setAnyoneTyping(typing)
-        }
-    }, [chat?.participantsData])
-
+    }, [messages, user?.userId, chat]);
 
     if (!chat) {
         return <div></div>
     }
 
-    let name = ""
-    let desc = ""
-    if (chat.type == 'individual') {
-        const chatUser = contacts[chat.participants
-            .filter((participant)=>user.userId != participant).pop()]
-        name = chatUser.name
-        desc = chatUser.status
-    } else if (chat.type == 'group'){
-        name = chat.name
-    }
-
     const typingStatus = (isTyping)=>{
         // console.log(`User ${isTyping ? "started" : "stopped"} typing`)
-        firestoreDB().typingEvent(user.userId, chat.chatId, isTyping)
+        if (!chat.isNewChat) {
+            firestoreDB().typingEvent(user.userId, chat.chatId, isTyping)
+        }
     }
 
     const handleOnKeyPress = (event)=>{
@@ -65,7 +53,7 @@ function Chat({ user, contacts, chat, messages, setMessages}) {
         setTimer(setTimeout(()=>{
             typingStatus(false)
             setTimer(undefined)
-        }, 250))
+        }, 500))
     }
 
     const handleOnBlur = (event)=>{
@@ -112,12 +100,47 @@ function Chat({ user, contacts, chat, messages, setMessages}) {
         }
     }
 
+    let name = ""
+    let desc = ""
+    if (chat.type === 'individual') {
+        const chatUser = contacts[chat.participants
+            .filter((participant)=>user.userId !== participant).pop()]
+        name = chatUser.name
+        desc = chatUser.status
+    } else if (chat.type === 'group'){
+        name = chat.name
+    }
+    let typing = undefined
+    if(chat?.participantsData) {
+        Object.entries(chat.participantsData).forEach(([id, data])=>{
+            if (id !== user.userId && data.isTyping) {
+                typing = `${contacts[id]?.name} is typing...`
+                return
+            }
+        })
+    }
+
+    const handleOnChatInfoClick = ()=>{
+        if (chat.type === "individual") {
+            setView({
+                type: "chatInfo",
+                contact: contacts[chat.participants
+                    .filter((participant)=>user.userId !== participant).pop()],
+            })
+        } else if (chat.type === "group") {
+            setView({
+                type: "groupChatInfo",
+                chat: chat,
+            })
+        }
+    }
+
     return (
-        <div className="chat">
+        <div className="right-component chat">
             <div className="chat-toolbar">
-                <div className="chat-info">
+                <div className="chat-info" onClick={(e)=>handleOnChatInfoClick()}>
                     <h3 className="chat-name">{name}</h3>
-                    <p className="chat-desc">{ anyoneTyping || desc }</p>
+                    <p className="chat-desc">{ typing || desc }</p>
                 </div>
                 <div className="icon-options">
 
@@ -135,7 +158,7 @@ function Chat({ user, contacts, chat, messages, setMessages}) {
                         const prevMsg = messages[index-1]
                         showDateEle = !utils.isSameDay(prevMsg.timestamp.toDate(),
                             message.timestamp.toDate())
-                    }
+                    } else { showDateEle = true }
                     return (<li key={message.messageId}>
                         { showDateEle && 
                         <p className="date">{utils.getShortDateInWords(message.timestamp.toDate())}</p>}

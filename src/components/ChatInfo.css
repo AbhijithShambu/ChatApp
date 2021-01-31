@@ -1,0 +1,47 @@
+.chat-info {
+  overflow-y: scroll;
+}
+.header {
+  position: relative;
+}
+
+.header-info {
+  position: absolute;
+  bottom: 0px;
+  margin: 10px;
+}
+
+.back-icon {
+  position: absolute;
+  border: 1px solid black;
+  margin: 10px;
+  top: 0px;
+}
+
+.section {
+  margin: 10px 4px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(60, 78, 60, 0.8);
+}
+
+.section-title {
+  font-size: small;
+  /* color: rgba(79, 117, 79, 0.8); */
+}
+
+.border-bottom {
+  border: 0px 0px 0px 1px solid black;
+}
+
+.subtext {
+  font-size: x-small;
+}
+.title-subtext-right {
+  display: flex;
+  align-items: center;
+}
+.title-subtext-right > * {
+  margin: 4px 5px;
+}

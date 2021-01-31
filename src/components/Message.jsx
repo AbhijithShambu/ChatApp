@@ -1,8 +1,11 @@
 import React from 'react'
+import { Dropdown } from 'react-bootstrap'
 import utils from '../Utils'
 import './Message.css'
 
 function Message({ sender , message, viewProps }) {
+    if (!sender) return <div></div>
+
     let messageClass = viewProps.rightLayout ? "message right-layout" : "message"
     if (viewProps.hideSenderInfo) {
         messageClass += " hide-sender-pic"
@@ -11,10 +14,23 @@ function Message({ sender , message, viewProps }) {
     }
 
     let mediaElement = <div></div>
-    const pattern = new RegExp(".*\.[jpg|png|jpeg]$")
+    const pattern = new RegExp(".*[jpg|png|jpeg]$")
     if (pattern.exec(message.mediaContent)) {
-        mediaElement = <img src={new URL(message.mediaContent)} alt="" className="message-media" 
-            width="200px" height="200px" style={ { objectFit:"contain", margin: "2px"} }/>
+        const downloadMedia = ()=>{
+             // todo:
+        }
+
+        mediaElement = (
+            <div className="message-media">
+                <div style={{ display:"none" }} className="media-download">
+                    <button onClick={(_)=>downloadMedia()} className="btn btn-secondary">Downlaod</button>
+                </div>
+                <img src={new URL(message.mediaContent)} alt="" 
+                    className="message-media" 
+                    width="200px" height="200px"
+                    style={ { objectFit:"contain", margin: "2px"} }/>
+            </div>  
+        )
     }
 
     let date = message.timestamp
@@ -39,6 +55,24 @@ function Message({ sender , message, viewProps }) {
                     </div>
                 </div>
                 <p className="message-status">{message.status}</p>
+            </div>
+            <div className="message-options">
+                <Dropdown>
+                    <Dropdown.Toggle variant="secondary" id="dropdown-basic"
+                        style={{
+                            margin:"0px", 
+                            padding:"0px 4px", 
+                            background:"rgba(150, 156, 211, 0.5)",
+                            border:"0px"
+                        }}
+                    ></Dropdown.Toggle>
+
+                    <Dropdown.Menu>
+                        <Dropdown.Item href="#/action-1">Forward</Dropdown.Item>
+                        <Dropdown.Item href="#/action-2">Reply-to</Dropdown.Item>
+                        <Dropdown.Item href="#/action-3">Info</Dropdown.Item>
+                    </Dropdown.Menu>
+                </Dropdown>
             </div>
         </div>
     );
